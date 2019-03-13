@@ -1,12 +1,19 @@
+import configparser
 import os
-
-from flask import request, Flask, Response, json, send_from_directory
+import time
+import requests
+from flask import request, Flask, Response
+from apscheduler.schedulers.background import BackgroundScheduler
+import atexit
+from datetime import datetime
 
 app = Flask(__name__)
 
-DIP = os.environ['DIP']
-DPORT = int(os.environ['DPORT'] )           # an arbitrary UDP port
-ROOT_PATH = os.environ['ROOT_PATH']
+DIP = os.environ['DIP'] #'127.0.0.1'#
+DPORT = int(os.environ['DPORT'] )   #5000        # an arbitrary UDP port
+ROOT_PATH = os.environ['ROOT_PATH'] #'/Users/somyakajla/Documents/store/DATANODE1/'#
+NAME_NODE_IP = '127.0.0.1'
+NAME_NODE_PORT = 9000
 
 
 @app.route('/readfile', methods=['GET'])
@@ -19,14 +26,81 @@ def read_file():
     f = open(block_addr, 'r')
     return Response(f.read(), status=200)
 
+@app.route('/replica', methods=['POST', ])
+def replica_data():
+    try:
+        data = request.json
+        blockId = data['blockId']
+        print(blockId)
+        nodeId = data['destinationNode']
+        print(nodeId)
+        block_addr = ROOT_PATH + blockId
+        if not os.path.isfile(ROOT_PATH + blockId):
+            print("ex")
+            return Response(status=404)
+
+        f = open(block_addr, 'r')
+        data = f.read()
+        multipart_form_data = {
+            'fileData': data,
+            'blockId': blockId
+        }
+        url = 'http://' + nodeId + '/upload'
+        print(url)
+        response = requests.post(url, json=multipart_form_data)
+    except Exception as error:
+        print(error)
+        return Response(error, response.status_code)
+    return Response(None, response.status_code)
+
 
 @app.route('/upload', methods=['POST', ])
 def upload_data():
     data = request.json
-    with open(ROOT_PATH + '/' + str(data['blockId']), 'w') as f:
+    with open(ROOT_PATH + str(data['blockId']), 'w') as f:
         f.write(data['fileData'])
-    return Response(data['blockId'], status=200)
+    return Response(None, status=200)
+
+
+def block_report():
+    list = [f for f in os.listdir(ROOT_PATH) if not f.startswith('.')]
+    multipart_form_data = {
+        'datanode': DIP + ':' + str(DPORT),
+        'blockIds': list
+    }
+    try:
+        response = requests.post('http://'+ NAME_NODE_IP + ':' + NAME_NODE_PORT + '/blockreport', json=multipart_form_data)
+    except:
+        print("remote Ip is not reachable " +  NAME_NODE_IP +":" +NAME_NODE_PORT)
+
+
+def heartbeat():
+    multipart_form_data = {
+        'datanode': DIP + ':' + str(DPORT),
+        'time': int(datetime.utcnow().timestamp())
+    }
+    try:
+        response = requests.post('http://'+ NAME_NODE_IP + ':' + NAME_NODE_PORT + '/heartbeat', json=multipart_form_data)
+    except:
+        print("remote Ip is not reachable " +  NAME_NODE_IP +":" +NAME_NODE_PORT)
+
+
+def set_conf():
+    conf = configparser.ConfigParser()
+    conf.readfp(open('py_dfs.conf'))
+    global NAME_NODE_IP, NAME_NODE_PORT
+
+    host, port = conf.get('DataNode', 'namenode').split(':')
+    NAME_NODE_IP = host
+    NAME_NODE_PORT = port
 
 
 if __name__ == "__main__":
-    app.run(host=DIP, port=DPORT, debug=True)
+    set_conf()
+    scheduler = BackgroundScheduler(daemon=True)
+    scheduler.add_job(func=heartbeat, trigger="interval", seconds=5)
+    scheduler.add_job(func=block_report, trigger="interval", seconds=5)
+    scheduler.start()
+    atexit.register(lambda: scheduler.shutdown(wait=False))
+    app.run(host=DIP, port=DPORT, debug=True, use_reloader=False)
+
