@@ -35,7 +35,7 @@ def putfile(args):
         print(blocks)
         blocksize = getBlockSize()
         print("check block size "+str(blocksize))
-        with open(source, 'rb') as f:
+        with open(source) as f:
             for b in blocks:
                 print("block as b"+str(b))
                 data = f.read(blocksize)
