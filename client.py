@@ -46,12 +46,12 @@ def readS3file(file):
 # Write data from S3 to new file
 def putS3file(args):
     try: 
-        # Data from S3
-        data = readS3file(filename)
-
         source = args[1]
         filename = args[2]
         filetype = args[3]
+        
+        # Data from S3
+        data = readS3file(filename)
 
         size = len(data)
         blocks = getBlocks(filename, str(size))
