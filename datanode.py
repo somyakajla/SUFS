@@ -11,9 +11,10 @@ app = Flask(__name__)
 
 DIP = os.environ['DIP'] #'127.0.0.1'#
 DPORT = int(os.environ['DPORT'] )   #5000        # an arbitrary UDP port
-ROOT_PATH = os.environ['ROOT_PATH'] #'/Users/somyakajla/Documents/store/DATANODE1/'#
-NAME_NODE_IP = '127.0.0.1'
-NAME_NODE_PORT = 9000
+ROOT_PATH = os.environ['ROOT_PATH'] 
+NIP = os.environ['NIP']
+NPORT = int(os.environ['NPORT'])
+
 
 
 @app.route('/readfile', methods=['GET'])
@@ -69,9 +70,9 @@ def block_report():
         'blockIds': list
     }
     try:
-        response = requests.post('http://'+ NAME_NODE_IP + ':' + NAME_NODE_PORT + '/blockreport', json=multipart_form_data)
+        response = requests.post('http://'+ NIP + ':' + str(NPORT) + '/blockreport', json=multipart_form_data)
     except:
-        print("remote Ip is not reachable " +  NAME_NODE_IP +":" +NAME_NODE_PORT)
+        print("remote Ip is not reachable " +  NIP +":" +str(NPORT))
 
 
 def heartbeat():
@@ -80,19 +81,14 @@ def heartbeat():
         'time': int(datetime.utcnow().timestamp())
     }
     try:
-        response = requests.post('http://'+ NAME_NODE_IP + ':' + NAME_NODE_PORT + '/heartbeat', json=multipart_form_data)
+        response = requests.post('http://'+ NIP + ':' + str(NPORT) + '/heartbeat', json=multipart_form_data)
     except:
-        print("remote Ip is not reachable " +  NAME_NODE_IP +":" +NAME_NODE_PORT)
+        print("remote Ip is not reachable " +  NIP +":" +str(NPORT))
 
 
 def set_conf():
     conf = configparser.ConfigParser()
     conf.readfp(open('py_dfs.conf'))
-    global NAME_NODE_IP, NAME_NODE_PORT
-
-    host, port = conf.get('DataNode', 'namenode').split(':')
-    NAME_NODE_IP = host
-    NAME_NODE_PORT = port
 
 
 if __name__ == "__main__":
