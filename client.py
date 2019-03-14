@@ -7,10 +7,11 @@ from io import BytesIO
 ACCESS_KEY_ID = os.environ['aws_access_key_id']
 SECRET_ACCESS_KEY = os.environ['aws_secret_access_key']
 BUCKET_NAME = os.environ['bucket_name']
-
+NIP = os.environ['NIP']
+NPORT = int(os.environ['NPORT'])
 
 def getfile(filename, destination):
-    res = requests.get(url='http://127.0.0.1:9000/api/v1/readfile?file=' + filename + '')
+    res = requests.get(url='http://'+ NIP + ':' + str(NPORT) + '/api/v1/readfile?file=' + filename + '')
     if not res:
         print("404: file not found")
         return
@@ -46,17 +47,14 @@ def readS3file(file):
 # Write data from S3 to new file
 def putS3file(args):
     try: 
-        source = args[1]
-        filename = args[2]
-        filetype = args[3]
+        filename = args[1]
+        filetype = args[2]
         
         # Data from S3
         data = readS3file(filename)
-
         size = len(data)
         blocks = getBlocks(filename, str(size), filetype)
         blocksize = getBlockSize()
-        print("check block size " + str(blocksize))
         datanodes = getDataNodes()
 
         # Write data from S3 into file
@@ -64,13 +62,12 @@ def putS3file(args):
         for b in blocks:
            datablock = binary_stream.read(blocksize).decode('utf-8')
            block_id = b[0]
-           nodes = [datanodes[_] for _ in b[1]]
            multipart_form_data = {
               'fileData': datablock,
               'blockId': block_id
            }
-           for n in nodes:
-              url = 'http://' + n[0] + ':' + n[1] + '/upload'
+           for n in b[1]:
+              url = 'http://' + n + '/upload'
               print(url)
               response = requests.post(url, json=multipart_form_data)
               print(response.status_code)
@@ -105,7 +102,7 @@ def putfile(args):
         print(error)
 
 def getBlocks(filename, size, filetype):
-    r = requests.get(url='http://127.0.0.1:9000/api/v1/getblock?file=' + filename + '&size=' + str(size) + '&filetype=' + filetype)
+    r = requests.get(url='http://'+ NIP + ':' + str(NPORT) + '/api/v1/getblock?file=' + filename + '&size=' + str(size) + '&filetype=' + filetype)
     if r.status_code != 200:
         raise Exception(r.text)
     blocks = r.json()
@@ -113,25 +110,15 @@ def getBlocks(filename, size, filetype):
 
 
 def getBlockSize():
-    r = requests.get(url='http://127.0.0.1:9000/api/v1/getblocksize')
+    r = requests.get(url='http://'+ NIP + ':' + str(NPORT) + '/api/v1/getblocksize')
     block_size = int(r.json())
     return block_size
 
 
 def getDataNodes():
-    r = requests.get(url='http://127.0.0.1:9000/api/v1/getdatanodes')
+    r = requests.get(url='http://'+ NIP + ':' + str(NPORT) + '/api/v1/getdatanodes')
     datanodes = r.json()
     return datanodes
-
-def update_replica():
-    print("REPLICA=")
-    multipart_form_data = {
-        'destinationNode': '127.0.0.1:5002',
-        'blockId': '5753305c-4566-11e9-a12a-8c8590872aa0'
-    }
-    response = requests.post(url='http://127.0.0.1:5001/replica', json=multipart_form_data)
-    if response.status_code != 200:
-        raise Exception(response.text)
 
 
 def main(args):
