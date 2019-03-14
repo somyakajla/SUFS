@@ -62,7 +62,7 @@ def putS3file(args):
         # Write data from S3 into file
         binary_stream = BytesIO(bytes(data))
         for b in blocks:
-           datablock = binary_stream.read(blocksize)
+           datablock = binary_stream.read(blocksize).decode('utf-8')
            block_id = b[0]
            nodes = [datanodes[_] for _ in b[1]]
            multipart_form_data = {
