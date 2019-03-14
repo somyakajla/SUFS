@@ -54,7 +54,7 @@ def putS3file(args):
         data = readS3file(filename)
 
         size = len(data)
-        blocks = getBlocks(filename, str(size))
+        blocks = getBlocks(filename, str(size), filetype)
         blocksize = getBlockSize()
         print("check block size " + str(blocksize))
         datanodes = getDataNodes()
