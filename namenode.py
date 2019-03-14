@@ -14,14 +14,15 @@ import os
 app = flask.Flask(__name__)
 app.config["DEBUG"] = True
 
-NIP = "127.0.0.1"
-NPORT = 9000
+NIP = os.environ['NIP']
+NPORT = int(os.environ['NPORT'])
+
 BLOCK_SIZE = 0
 REPLICATION = 1
 BLOCK_MAP = {}
 FILE_TABLE = {}
 DATA_NODES = {}
-CONFIG_PATH = ""
+CONFIG_PATH = os.environ['CONF_PATH'] 
 
 
 def flush_to_disk():
@@ -38,9 +39,10 @@ def alloc_blocks(dest, num_blocks):
     for n_data in DATA_NODES.keys():
         if DATA_NODES[n_data][1] == 1:  # if datanode is active only add into sampler
             node_ids.append(n_data)
+    rep_num = min(len(node_ids), REPLICATION)
     for i in range(0, num_blocks):
         block_uuid = str(uuid.uuid1())
-        active_nodes_ids = random.sample(node_ids, REPLICATION)
+        active_nodes_ids = random.sample(node_ids, rep_num)
         blocks.append((block_uuid, active_nodes_ids, i))
         if 'block_info' not in FILE_TABLE[dest]:
             FILE_TABLE[dest]['block_info'] = []
@@ -95,7 +97,6 @@ def set_conf():
 
     BLOCK_SIZE = int(conf.get('NameNode', 'block_size'))
     REPLICATION = int(conf.get('NameNode', 'replication_factor'))
-    CONFIG_PATH = str(conf.get('NameNode', 'config_path'))
     config_data = CONFIG_PATH + 'ftdata'
     if os.path.isfile(config_data):
          FILE_TABLE = pickle.load(open(config_data, 'rb'))
@@ -203,4 +204,4 @@ if __name__ == "__main__":
     scheduler.start()
     atexit.register(lambda: scheduler.shutdown(wait=False))
     atexit.register(flush_to_disk)
-    app.run(host=NIP, port=NPORT, debug=True, use_reloader=False)
+    app.run(host=NIP, port=NPORT , debug=True, use_reloader=False)
