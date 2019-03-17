@@ -22,7 +22,7 @@ REPLICATION = 1
 BLOCK_MAP = {}
 FILE_TABLE = {}
 DATA_NODES = {}
-CONFIG_PATH = os.environ['CONF_PATH'] 
+CONFIG_PATH = './NAMESERVER/'#os.environ['CONF_PATH']
 
 
 def flush_to_disk():
@@ -97,6 +97,8 @@ def set_conf():
 
     BLOCK_SIZE = int(conf.get('NameNode', 'block_size'))
     REPLICATION = int(conf.get('NameNode', 'replication_factor'))
+    if not os.path.isdir(CONFIG_PATH):
+        os.mkdir(CONFIG_PATH)
     config_data = CONFIG_PATH + 'ftdata'
     if os.path.isfile(config_data):
          FILE_TABLE = pickle.load(open(config_data, 'rb'))
@@ -191,10 +193,6 @@ def syncFileTable():
             block[1] = nodeids
 
 
-def exists(file):
-    return file in FILE_TABLE
-
-
 if __name__ == "__main__":
     set_conf()
     scheduler = BackgroundScheduler(daemon=True)
@@ -204,4 +202,4 @@ if __name__ == "__main__":
     scheduler.start()
     atexit.register(lambda: scheduler.shutdown(wait=False))
     atexit.register(flush_to_disk)
-    app.run(host=NIP, port=NPORT , debug=True, use_reloader=False)
+    app.run(host=NIP, port=NPORT, debug=True, use_reloader=False)

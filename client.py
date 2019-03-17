@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 import requests
@@ -16,17 +17,16 @@ def getfile(filename, destination):
         print("404: file not found")
         return
     fileinfo = res.json()
-    print(res.text)
+    print(fileinfo)
     filetype = fileinfo['filetype']
-    #datanodes = getDataNodes()
-    with open(destination, 'w') as fd:
+    with open(destination, 'wb') as fd:
         for f in fileinfo['block_info']:
             nodes = f[1]
             for n in nodes:
                 url = 'http://' + n + '/readfile?block=' + f[0]
-                res = requests.get(url=url)
+                res = requests.get(url=url, stream=True)
                 if res:
-                    fd.write(res.text)
+                    fd.write(res.raw.read())
                     break
                 else:
                     print("No blocks found. Possibly a corrupt file")
@@ -55,21 +55,21 @@ def putS3file(args):
         size = len(data)
         blocks = getBlocks(filename, str(size), filetype)
         blocksize = getBlockSize()
-        datanodes = getDataNodes()
 
         # Write data from S3 into file
         binary_stream = BytesIO(bytes(data))
         for b in blocks:
-           datablock = binary_stream.read(blocksize).decode('utf-8')
+           datablock = binary_stream.read(blocksize)
            block_id = b[0]
+           payload = {'blockId': block_id}
            multipart_form_data = {
-              'fileData': datablock,
-              'blockId': block_id
+              'fileData': ('None', datablock),
+              'filter': (None, json.dumps(payload))
            }
            for n in b[1]:
               url = 'http://' + n + '/upload'
               print(url)
-              response = requests.post(url, json=multipart_form_data)
+              response = requests.post(url, files=multipart_form_data)
               print(response.status_code)
     except Exception as error:
         print(error)
@@ -84,19 +84,20 @@ def putfile(args):
         print(blocks)
         blocksize = getBlockSize()
         print("check block size "+str(blocksize))
-        with open(source) as f:
+        with open(source, 'rb') as f:
             for b in blocks:
                 print("block as b"+str(b))
                 data = f.read(blocksize)
                 block_id = b[0]
+                payload = {'blockId': block_id}
                 multipart_form_data = {
-                    'fileData': data,
-                    'blockId': block_id
+                    'fileData': ('None', data),
+                    'filter': (None, json.dumps(payload))
                 }
                 for n in b[1]:
                     url = 'http://' + n + '/upload'
                     print(url)
-                    response = requests.post(url, json=multipart_form_data)
+                    response = requests.post(url, files=multipart_form_data)
                     print(response.status_code)
     except Exception as error:
         print(error)
