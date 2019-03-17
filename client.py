@@ -18,7 +18,7 @@ def getfile(filename, destination):
         return
     fileinfo = res.json()
     print(fileinfo)
-    filetype = fileinfo['filetype']
+    #filetype = fileinfo['filetype']
     with open(destination, 'wb') as fd:
         for f in fileinfo['block_info']:
             nodes = f[1]
@@ -92,7 +92,7 @@ def putfile(args):
                 payload = {'blockId': block_id}
                 multipart_form_data = {
                     'fileData': ('None', data),
-                    'filter': (None, json.dumps(payload))
+                    'filter': (None, json.dumps(payload)) # not able to serialise the bytes into json object hence need to dump into json string
                 }
                 for n in b[1]:
                     url = 'http://' + n + '/upload'

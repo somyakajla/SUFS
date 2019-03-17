@@ -42,7 +42,7 @@ def alloc_blocks(dest, num_blocks):
     rep_num = min(len(node_ids), REPLICATION)
     for i in range(0, num_blocks):
         block_uuid = str(uuid.uuid1())
-        active_nodes_ids = random.sample(node_ids, rep_num)
+        active_nodes_ids = random.sample(node_ids, rep_num) #distributes replicas randomly from active nodes array
         blocks.append((block_uuid, active_nodes_ids, i))
         if 'block_info' not in FILE_TABLE[dest]:
             FILE_TABLE[dest]['block_info'] = []
@@ -192,6 +192,8 @@ def syncFileTable():
                         nodeids.append(node)
             block[1] = nodeids
 
+def exists(file):
+    return file in FILE_TABLE
 
 if __name__ == "__main__":
     set_conf()
