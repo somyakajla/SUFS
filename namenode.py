@@ -16,13 +16,13 @@ app.config["DEBUG"] = True
 
 NIP = os.environ['NIP']
 NPORT = int(os.environ['NPORT'])
+CONFIG_PATH = os.environ['CONF_PATH']
 
 BLOCK_SIZE = 0
 REPLICATION = 1
 BLOCK_MAP = {}
 FILE_TABLE = {}
 DATA_NODES = {}
-CONFIG_PATH = './NAMESERVER/'#os.environ['CONF_PATH']
 
 
 def flush_to_disk():
