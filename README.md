@@ -44,6 +44,10 @@ B. FILE_TABLE dictionary is being created at the time when client send request t
 C. DATA_NODES dictionary is being created by the heartbeat send by data nodes.
 D. BLOCK_MAP dictionary is being created/updated by block report send by data nodes.
 
+Important- Namenode does have any information about its datanodes untill datanodes itself sends its heartbeat and block reports to the name node.
+
+
+
 
 
 
