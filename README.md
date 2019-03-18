@@ -38,8 +38,9 @@ A. There are 3 services running in the background to perform following tasks.
    3. syncFileTable : every 25 second, this service runs in the background which does following steps- 
        a. Removes the nodeid and its corresponding array of blocks from  BLOCK_MAP which is inactive in DATA_NODES dictionary.
        b. For each block of each file in FILE_TABLE, it checks that number of active node holding that block is less than the   number of replica. 
-       c. If so, it send request to those active data nodes which does not have that block to store that block .
-       d. Update the FILE_TABLE with new data nodes corresponding to block.
+       c. If so, it send request to the datanode which has the respective block containing the information of active datanode ids which are active and currently not having the replica of that block as well as block Id. 
+       d. then data node send request to each active data node to store the block.
+       e. Update the FILE_TABLE with new data nodes corresponding to block.
 B. FILE_TABLE dictionary is being created at the time when client send request to namenode to get the information about datanodes and blocks where client can store the respective file. 
 C. DATA_NODES dictionary is being created by the heartbeat send by data nodes.
 D. BLOCK_MAP dictionary is being created/updated by block report send by data nodes.
