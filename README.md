@@ -1,15 +1,15 @@
 # SUFS
 Seattle University Distributed File System
 
-## To Run Nameserver 
+## To Run Nameserver:
 python3 namesever.py
 
 ### NameNode Environment Variable Setup
 export NIP=127.0.0.1
 export NPORT=9000
-export CONFIG_PATH=./NameNode/
+export CONFIG_PATH=./NAMENODE/
 
-## To Run DataNode
+## To Run DataNode:
 These environment variable needs to be setup in each datanode with ip address and port and ROOT_Path to save block_files.
 
 ### DataNode Environment Variable Setup
@@ -22,20 +22,20 @@ export NPORT=9000
 ### To DataNode Server
 python3 datanode.py
 
-##To Run Client:
+## To Run Client:
 
 ## Client Environment Variable Setup
 export NIP=127.0.0.1
 export NPORT=9000
 
-###To Upload file
+### To Upload file
 python client.py putfile source_path dest_filename
 
-###To retrieve file
+### To retrieve file
 python client.py getfile source_filename destination_path
 
 
-#Functionality Description : 
+# Functionality Description :
 
 ## NameNode - 
 
