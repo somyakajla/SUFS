@@ -9,31 +9,28 @@ from datetime import datetime
 app = Flask(__name__)
 
 DIP = os.environ['DIP']
-DPORT = int(os.environ['DPORT'] )
+DPORT = os.environ['DPORT']
 ROOT_PATH = os.environ['ROOT_PATH']
 NIP = os.environ['NIP']
-NPORT = int(os.environ['NPORT'])
+NPORT = os.environ['NPORT']
 
 
 
-@app.route('/readfile', methods=['GET'])
+@app.route('/api/v1/readfile', methods=['GET'])
 def read_file():
     r = request.args.get('block')
     block_addr = ROOT_PATH+'/' + str(r)
-    print(block_addr)
     if not os.path.isfile(block_addr):
         return Response(status=404)
     f = open(block_addr, 'rb')
     return Response(f.read(), status=200)
 
-@app.route('/replica', methods=['POST', ])
+@app.route('/api/v1/replica', methods=['POST', ])
 def replica_data():
     try:
         data = request.json
         blockId = data['blockId']
-        print(blockId)
         nodeId = data['destinationNode']
-        print(nodeId)
         block_addr = ROOT_PATH + blockId
         if not os.path.isfile(ROOT_PATH + blockId):
             return Response(status=404)
@@ -45,8 +42,7 @@ def replica_data():
             'fileData': ('None', data),
             'filter': (None, json.dumps(payload))
         }
-        url = 'http://' + nodeId + '/upload'
-        print(url)
+        url = 'http://' + nodeId + '/api/v1/upload'
         response = requests.post(url, files=multipart_form_data)
     except Exception as error:
         print(error)
@@ -54,7 +50,7 @@ def replica_data():
     return Response(None, response.status_code)
 
 
-@app.route('/upload', methods=['POST', ])
+@app.route('/api/v1/upload', methods=['POST', ])
 def upload_data():
     data = request.files['fileData'].read()
     blockId = json.loads(request.form['filter'])
@@ -70,9 +66,9 @@ def block_report():
         'blockIds': list
     }
     try:
-        response = requests.post('http://'+ NIP + ':' + str(NPORT) + '/blockreport', json=multipart_form_data)
+        response = requests.post('http://' + NIP + ':' + str(NPORT) + '/api/v1/blockreport', json=multipart_form_data)
     except:
-        print("remote Ip is not reachable " +  NIP +":" +str(NPORT))
+        print("remote Ip is not reachable " + NIP + ":" + str(NPORT))
 
 
 def heartbeat():
@@ -81,9 +77,9 @@ def heartbeat():
         'time': int(datetime.utcnow().timestamp())
     }
     try:
-        response = requests.post('http://'+ NIP + ':' + str(NPORT) + '/heartbeat', json=multipart_form_data)
+        response = requests.post('http://'+ NIP + ':' + str(NPORT) + '/api/v1/heartbeat', json=multipart_form_data)
     except:
-        print("remote Ip is not reachable " +  NIP +":" +str(NPORT))
+        print("remote Ip is not reachable " + NIP + ":" + str(NPORT))
 
 
 def set_conf():
