@@ -1,6 +1,5 @@
-import configparser
+import json
 import os
-import time
 import requests
 from flask import request, Flask, Response
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -9,57 +8,54 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-DIP = os.environ['DIP'] #'127.0.0.1'#
-DPORT = int(os.environ['DPORT'] )   #5000        # an arbitrary UDP port
-ROOT_PATH = os.environ['ROOT_PATH'] 
+DIP = os.environ['DIP']
+DPORT = os.environ['DPORT']
+ROOT_PATH = os.environ['ROOT_PATH']
 NIP = os.environ['NIP']
-NPORT = int(os.environ['NPORT'])
+NPORT = os.environ['NPORT']
 
 
 
-@app.route('/readfile', methods=['GET'])
+@app.route('/api/v1/readfile', methods=['GET'])
 def read_file():
     r = request.args.get('block')
     block_addr = ROOT_PATH+'/' + str(r)
-    print(block_addr)
     if not os.path.isfile(block_addr):
         return Response(status=404)
-    f = open(block_addr, 'r')
+    f = open(block_addr, 'rb')
     return Response(f.read(), status=200)
 
-@app.route('/replica', methods=['POST', ])
+@app.route('/api/v1/replica', methods=['POST', ])
 def replica_data():
     try:
         data = request.json
         blockId = data['blockId']
-        print(blockId)
         nodeId = data['destinationNode']
-        print(nodeId)
         block_addr = ROOT_PATH + blockId
         if not os.path.isfile(ROOT_PATH + blockId):
-            print("ex")
             return Response(status=404)
 
-        f = open(block_addr, 'r')
+        f = open(block_addr, 'rb')
         data = f.read()
+        payload = {'blockId': blockId}
         multipart_form_data = {
-            'fileData': data,
-            'blockId': blockId
+            'fileData': ('None', data),
+            'filter': (None, json.dumps(payload))
         }
-        url = 'http://' + nodeId + '/upload'
-        print(url)
-        response = requests.post(url, json=multipart_form_data)
+        url = 'http://' + nodeId + '/api/v1/upload'
+        response = requests.post(url, files=multipart_form_data)
     except Exception as error:
         print(error)
         return Response(error, response.status_code)
     return Response(None, response.status_code)
 
 
-@app.route('/upload', methods=['POST', ])
+@app.route('/api/v1/upload', methods=['POST', ])
 def upload_data():
-    data = request.json
-    with open(ROOT_PATH + str(data['blockId']), 'w') as f:
-        f.write(data['fileData'])
+    data = request.files['fileData'].read()
+    blockId = json.loads(request.form['filter'])
+    with open(ROOT_PATH + str(blockId['blockId']), 'wb') as f:
+        f.write(data)
     return Response(None, status=200)
 
 
@@ -70,9 +66,9 @@ def block_report():
         'blockIds': list
     }
     try:
-        response = requests.post('http://'+ NIP + ':' + str(NPORT) + '/blockreport', json=multipart_form_data)
+        response = requests.post('http://' + NIP + ':' + str(NPORT) + '/api/v1/blockreport', json=multipart_form_data)
     except:
-        print("remote Ip is not reachable " +  NIP +":" +str(NPORT))
+        print("remote Ip is not reachable " + NIP + ":" + str(NPORT))
 
 
 def heartbeat():
@@ -81,14 +77,14 @@ def heartbeat():
         'time': int(datetime.utcnow().timestamp())
     }
     try:
-        response = requests.post('http://'+ NIP + ':' + str(NPORT) + '/heartbeat', json=multipart_form_data)
+        response = requests.post('http://'+ NIP + ':' + str(NPORT) + '/api/v1/heartbeat', json=multipart_form_data)
     except:
-        print("remote Ip is not reachable " +  NIP +":" +str(NPORT))
+        print("remote Ip is not reachable " + NIP + ":" + str(NPORT))
 
 
 def set_conf():
-    conf = configparser.ConfigParser()
-    conf.readfp(open('py_dfs.conf'))
+    if not os.path.isdir(ROOT_PATH):
+        os.mkdir(ROOT_PATH)
 
 
 if __name__ == "__main__":
