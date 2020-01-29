@@ -47,7 +47,7 @@ DATA_NODES - { nodeId : [ timestamp, 0/1(inactive/active) ] }
 
 BLOCK_MAP - { nodeid : [ array of block ids ] }
 A. There are 3 services running in the background to perform following tasks.
-   1. update_DataNodes : it checks in  DATA_NODES dictionary that the difference in timestamp and current time has a value   more than 15 seconds then update that node as a inactive node.
+   1. update_DataNodes : it checks in  DATA_NODES dictionary that the difference in previous timestamp and current time has a value   more than 15 seconds then update that node as a inactive node.
    2. Flush_to_disk : every 10 seconds it updates the FILE_TABLE dictionary in disk’s directory.
    3. syncFileTable : every 25 second, this service runs in the background which does following steps- 
        a. Removes the nodeid and its corresponding array of blocks from  BLOCK_MAP which is inactive in DATA_NODES dictionary.
